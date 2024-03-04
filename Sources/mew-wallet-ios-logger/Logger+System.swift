@@ -16,21 +16,24 @@ extension Logger {
   public typealias Metadata = Logging.Logger.Metadata
   public typealias Message = Logging.Logger.Message
   
-  public struct System {
+  public struct System: Sendable {
     let subsystem: String
     let category: String
-    var level: Level = .warning
+    private let _level: _Level
+    public var level: Logger.Level {
+      return _level.level.value
+    }
     
     public static func with(subsystem: String, category: String, level: Logger.Level = .warning) -> System {
-      let system = System(subsystem: subsystem, category: category, level: level)
+      let system = System(subsystem: subsystem, category: category, _level: .init(level: level))
       return system
     }
     
-    public mutating func level(_ level: Logger.Level) {
+    public func level(_ level: Logger.Level) {
       #if !DEBUG
       let level = max(level, .warning)
       #endif
-      self.level = level
+      self._level.set(level: level)
     }
   }
   
@@ -42,5 +45,19 @@ extension Logger {
     logger.logLevel = system.level
     return logger
     #endif
+  }
+}
+
+fileprivate extension Logger {
+  final private class _Level: Sendable {
+    let level = ThreadSafe<Level>(.warning)
+    
+    init(level: Level = .warning) {
+      self.level.value = level
+    }
+    
+    func set(level: Logger.Level) {
+      self.level.value = level
+    }
   }
 }
