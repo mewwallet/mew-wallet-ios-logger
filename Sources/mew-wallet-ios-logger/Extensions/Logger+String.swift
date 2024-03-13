@@ -6,6 +6,11 @@
 //
 
 import Foundation
+#if canImport(os)
+  import os
+#else
+  import Logging
+#endif
 
 public extension Logger {
   static func trace(_ system: Logger.System, _ message: String, metadata: Logger.Metadata? = nil) {
